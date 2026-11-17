@@ -1,0 +1,34 @@
+# Минимальный dev-конфиг. Запуск: ./build/costrelayd --config config/costrelay.dev.yaml
+proxy:
+  name: "costrelay-dev"
+  data_dir: "./state"
+  listen: "127.0.0.1:18080"
+
+# Пользователи входа в панель/портал.
+portal:
+  users:
+    # Argon2id-хеш dev-пароля; сгенерировать: ./build/costrelayd --hash-password
+    - username: "admin"
+      password_hash: "$argon2id$v=19$m=65536,t=2,p=1$OKO0/nVX36+ds+vRR+744g$jMgW0fp5P0pVSb6S9QxKtCB3tblKn1tQcBu3hxRHdes"
+      role: "admin"
+
+# Публичные имена моделей для агентов.
+models:
+  - "mock/model-a"
+default_model: "mock/model-a"
+aliases:
+  "default": "mock/model-a"
+
+providers:
+  external:
+    - id: "mock-routerai"
+      url: "http://127.0.0.1:19090/api/v1"
+
+consumers:
+  - id: "dev"
+    token_hash: "sha256:c91cbbedf8c712e8e2b7517ddeca8fe4fde839ebd8339e0b2001363002b37712"
+    rpm: 600
+    max_concurrent: 16
+  - id: "metrics"
+    token_hash: "sha256:eb5a63e42b6b498364b3f10d5c3bb71cd8c7a7a9ad16524875557fa2e52f5d41"
+    scopes: ["stats:read"]

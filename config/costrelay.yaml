@@ -1,0 +1,74 @@
+# Конфигурация CostRelay. Описание параметров и их допустимых значений —
+# в шаблоне: costrelayd --init-config (src/config/DefaultConfig.h).
+# Секреты: только file:/путь или env:ИМЯ, пароли и токены в файле не хранятся.
+# Проверка: costrelayd --config config/costrelay.yaml --check
+# Здесь записаны только значения, отличные от значений по умолчанию.
+
+proxy:
+  data_dir: "../state"
+  listen: "127.0.0.1:8443"                # локальные агенты: HTTP, только loopback
+  public_url: "https://server.lan:8444"   # имя из SAN сертификата, не IP: адрес выдаёт DHCP
+  # Шифруется только сетевой листенер. Сертификат второго уровня от локального УЦ
+  # (scripts/gen_local_ca.sh): SAN — DNS-имена, к IP не привязан, слушает 0.0.0.0.
+  # Порт HTTPS отличается от loopback HTTP: 0.0.0.0 и 127.0.0.1 не занимают один порт.
+  tls:
+    listen: "0.0.0.0:8444"
+    cert_file: "../state/tls/fullchain.pem"   # leaf + Root CA
+    key_file: "../state/tls/server.key"
+
+panel:
+  # Панель и портал доступны только локальной сети и самой машине.
+  allowed_networks: ["192.168.1.0/24", "127.0.0.1/32", "::1/128"]
+
+portal:
+  users:
+    - username: "admin"
+      password_hash: "file:../../userpass"
+      role: "admin"
+  services:
+    - id: "strata"
+      title: "Strata"
+      url: "http://127.0.0.1:8080"
+      roles: ["admin"]
+      headers: { "Authorization": "Bearer file:../../strata-token" }
+    - id: "dsh"
+      title: "DeepSeek Harness"
+      url: "http://127.0.0.1:3080"
+      roles: ["admin"]
+
+models:
+  - "deepseek/deepseek-v4.1-flash"
+  - "local/strata"
+default_model: "deepseek/deepseek-v4.1-flash"
+
+providers:
+  external:
+    - id: "routerai"
+      url: "https://routerai.ru/api/v1"
+      api_key: "file:../../routerai-token"
+      models: ["deepseek/*"]
+  local:
+    - id: "strata"
+      url: "http://127.0.0.1:8080/v1"
+      api_key: "file:../../strata-token"
+      models: { "local/strata": "qwen3.8-flash-next-unsloth-ud-q4_k_xl" }
+      context_length: 262144
+
+consumers:
+  - id: "agent-esna"
+    token_hash: "file:../../agent-esma-token"
+  - id: "agent-work"
+    token_hash: "file:../../agent-work-token"
+  - id: "agent-server"
+    token_hash: "file:../../strata-token"
+    allowed_networks: ["192.168.1.0/24", "127.0.0.1/32", "::1/128"]
+
+analytics:
+  log_dir: "../data"
+  auto_import: false
+
+routing:
+  cache_weight: 2.3
+
+# Скалярная запись = все модели провайдера, причина по умолчанию.
+blacklist: ["relace", "open-inference", "wafer", "reka", "yandex"]

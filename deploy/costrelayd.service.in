@@ -1,0 +1,24 @@
+[Unit]
+Description=CostRelay (OpenAI-compatible gateway, web panel and portal)
+Documentation=file://@ROOT@/README.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=@USER@
+Group=@GROUP@
+WorkingDirectory=@ROOT@
+Environment=HOME=@HOME@
+Environment=PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+ExecStart=@BIN@ --config @CONFIG@
+Restart=always
+RestartSec=3
+TimeoutStopSec=30
+KillSignal=SIGTERM
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=costrelayd
+
+[Install]
+WantedBy=multi-user.target
